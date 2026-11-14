@@ -10,7 +10,9 @@ MODEL = os.getenv("EMBED_MODEL", "text-embedding-nomic-embed-text-v1.5")
 # Query/document prefixes per model family (read each model card!)
 PREFIXES = {
     "nomic":  ("search_query: ", "search_document: "),
-    "qwen3":  ("Instruct: Given a question, retrieve passages that answer it\nQuery: ", ""),
+    # Exactly the model card's retrieval instruction. Our own wording ("Given a question,
+    # retrieve passages that answer it\nQuery: ") cost 15 points of hit@5 (Phase 02, Step 6).
+    "qwen3":  ("Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery:", ""),
     "bge-small": ("Represent this sentence for searching relevant passages: ", ""),
 }
 QP, DP = next((v for k, v in PREFIXES.items() if k in MODEL.lower()), ("", ""))

@@ -10,6 +10,7 @@ Everything here is git-ignored except this file. Folders are in pipeline order; 
 | `chunks/` | `uv run python -m rag.chunk <chunker>` | `<parser>-<chunker>.jsonl`, one chunk per line | Yes |
 | `cache/embeddings/` | eval scripts | chunk vectors, keyed by chunk file + model + content hash | Yes, but re-embedding costs time |
 | `cache/contexts.jsonl` | `rag.chunk contextual` | LLM-written chunk contexts, keyed by model + chunk hash | Avoid: ~16 min of LLM time |
+| `cache/captions.jsonl` | `rag.caption` | vision-LLM figure descriptions, keyed by model + settings + image hash + prompt | Avoid: ~5 min with the 22 GB vision model |
 | `indexes/<phase>/<store>/` | lab and eval scripts | NumPy / FAISS / Chroma indexes per phase | Yes |
 | `lab_outputs/<phase>/<lab>/` | `labs/...` scripts | one-off experiment output (e.g. lab2a `inspect/`, `shootout/`) | Yes |
 

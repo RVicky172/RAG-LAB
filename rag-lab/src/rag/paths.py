@@ -10,7 +10,8 @@ everything from there with `uv run`).
     ├── chunks/                    3. rag.chunk   -> <parser>-<chunker>.jsonl
     ├── cache/                        expensive model outputs, keyed by content hash
     │   ├── embeddings/               chunk vectors (eval)
-    │   └── contexts.jsonl            contextual-retrieval sentences (rag.enrich)
+    │   ├── contexts.jsonl            contextual-retrieval sentences (rag.enrich)
+    │   └── captions.jsonl            vision-LLM figure descriptions (rag.caption)
     ├── indexes/<phase>/<store>/   4. vector indexes built from chunks + embeddings
     └── lab_outputs/<phase>/<lab>/    one-off experiment outputs, not used by the pipeline
 """
@@ -27,6 +28,7 @@ CHUNKS = DATA / "chunks"
 CACHE = DATA / "cache"
 EMBEDDINGS_CACHE = CACHE / "embeddings"
 CONTEXTS_CACHE = CACHE / "contexts.jsonl"
+CAPTIONS_CACHE = CACHE / "captions.jsonl"
 
 INDEXES = DATA / "indexes"
 LAB_OUTPUTS = DATA / "lab_outputs"

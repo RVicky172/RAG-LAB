@@ -221,17 +221,18 @@ Tick these off as you go:
 
 - [x] 00 Prerequisites: LM Studio server, models loaded, first local LLM call, tokens and latency
 - [x] 01 Naive RAG from scratch + 20-question golden set (21 q, golden v2; baseline hit@5 0.78 / MRR 0.72)
-- [ ] 02 Parsing + 4 chunking strategies compared (**in progress**, details in [Phase 02 results](rag-lab/eval/phase02_chunking/results.md))
+- [x] 02 Parsing + 4 chunking strategies compared → Docling + structure-aware 400/64 + vision captions + nomic: hit@5 0.92 / MRR 0.80 on golden v4 (details in [Phase 02 results](rag-lab/eval/phase02_chunking/results.md))
   - [x] Step 1: look at the data, defects log ([defects.md](rag-lab/labs/phase02_ingestion/lab2a_parsing/defects.md))
   - [x] Lab 2a: parser shoot-out, pypdf vs PyMuPDF vs Docling ([shootout.md](rag-lab/labs/phase02_ingestion/lab2a_parsing/shootout.md)) → Docling
   - [x] `rag/parse.py`: typed elements, page + section path, cleaning, figure crops
   - [x] `rag/chunk.py`: recursive, structure-aware (table row-split + header), semantic; `rag/enrich.py`: contextual retrieval
   - [x] Step 4: chunk metadata schema with deterministic ids
-  - [x] Step 6: ablation on NumPy / FAISS / Chroma → Docling + structure-aware 0.83 / 0.74 (contextual 0.77 MRR)
-  - [ ] Contextual retrieval at `--size 400` (size-fair re-test)
-  - [ ] Step 5: vision captions for figures (Qwen3.6-35B-A3B), tables summary
-  - [ ] Embedding model as a variable: nomic-v1.5 vs Qwen3-Embedding-0.6B; chunk sizes 256 / 512 / 1024
-  - [ ] Grow `golden.jsonl` to 40 questions (tables + figures, the two-column papers), re-run the ablation
+  - [x] Step 6: ablation on NumPy / FAISS / Chroma → Docling + structure-aware
+  - [x] Contextual retrieval at `--size 400` (size-fair re-test): no gain at equal size → not adopted; default is now structure-aware 400/64 (hit@5 0.89, MRR 0.75)
+  - [x] Step 5: vision captions for figures (`rag/caption.py`, Qwen3.6-35B-A3B) → hit@5 0.92 / MRR 0.80, chart fig@5 0.53 → 0.93 (table summaries not needed: tables already 1.00)
+  - [x] Embedding model: nomic-v1.5 vs Qwen3-Embedding-0.6B / 4B → nomic kept (4B ties; 0.6B worse; the Qwen3 query instruction alone was worth 15 points); chunk sizes 256 / 400 / 512 / 1024 → 400 kept
+  - [x] Grow `golden.jsonl` to 40 questions → golden v3: 42 q (38 answerable); re-run: structure-400 best, hit@5 0.92 / MRR 0.78
+  - [x] Chart questions (5 per paper with figures) → golden v4: 57 q (53 answerable); baseline before vision captions: chart hit@5 0.87 (page-level overstates it)
 - [ ] 03 ANN benchmark + hybrid search with RRF
 - [ ] 04 Query transformation module
 - [ ] 05 Reranking + parent-child + context compression

@@ -76,7 +76,10 @@ def store_metadata(chunk):
 def summarize(results_table):
     answerable = results_table[results_table["answerable"]]
     by_type = answerable.groupby("type").agg(hit=("hit", "mean"), mrr=("reciprocal_rank", "mean"))
+    charts = answerable[answerable["type"] == "chart"]
     return {
+        # chart questions: was the figure chunk itself on the right page in the top K? (Step 5)
+        "chart_figure_hit": round(float(charts["figure_hit"].mean()), 3) if len(charts) else None,
         "hit_at_k": round(float(answerable["hit"].mean()), 3),
         "mrr": round(float(answerable["reciprocal_rank"].mean()), 3),
         "missed": answerable.loc[~answerable["hit"], "id"].tolist(),
@@ -104,10 +107,12 @@ def record(store_name, config, chunks, summary):
 
 
 def print_table(rows):
-    print(f"\n{'config':<55}{'chunks':>7}{'avg tok':>8}{'hit@' + str(TOP_K):>7}{'MRR':>7}  missed")
+    print(f"\n{'config':<55}{'chunks':>7}{'avg tok':>8}{'hit@' + str(TOP_K):>7}{'MRR':>7}"
+          f"{'fig@' + str(TOP_K):>7}  missed")
     for r in rows:
+        fig = f"{r['chart_figure_hit']:>7.2f}" if r.get("chart_figure_hit") is not None else f"{'-':>7}"
         print(f"{r['config']:<55}{r['n_chunks']:>7}{r['avg_tokens']:>8}{r['hit_at_k']:>7.2f}"
-              f"{r['mrr']:>7.2f}  {', '.join(r['missed']) or '-'}")
+              f"{r['mrr']:>7.2f}{fig}  {', '.join(r['missed']) or '-'}")
 
 
 # ---------- 4. The loop every script runs ----------

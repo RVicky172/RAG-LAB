@@ -12,7 +12,8 @@ rag-lab/
 │   ├── vector_store.py          one interface: NumPy, FAISS, Chroma                    (01)
 │   ├── parse.py                 PDF -> typed elements (Docling; pypdf baseline)        (02)
 │   ├── chunk.py                 recursive, structure-aware, semantic chunkers          (02)
-│   └── enrich.py                contextual retrieval                                   (02)
+│   ├── enrich.py                contextual retrieval                                   (02)
+│   └── caption.py               vision-LLM figure descriptions                         (02)
 │
 ├── labs/                     ← LEARNING SCRIPTS: experiments you run once, per phase
 │   ├── phase00_prerequisites/   hello_llm, token_count, estimate, vector, prompting
@@ -34,7 +35,8 @@ rag-lab/
     ├── chunks/                  3. rag.chunk:  <parser>-<chunker>.jsonl
     ├── cache/                      expensive model outputs, keyed by content hash
     │   ├── embeddings/             chunk vectors (eval)
-    │   └── contexts.jsonl          contextual-retrieval sentences (rag.enrich)
+    │   ├── contexts.jsonl          contextual-retrieval sentences (rag.enrich)
+    │   └── captions.jsonl          figure descriptions (rag.caption)
     ├── indexes/                 4. vector indexes
     │   ├── phase01/                numpy/, faiss/, chroma/ (naive_800)
     │   └── phase02/                faiss/<config>/, chroma/ (one collection per chunk file)
@@ -53,6 +55,8 @@ rag-lab/
 uv run python -m rag.parse data/raw                      # PDFs -> data/parsed/docling/
 uv run python -m rag.chunk structure --size 512           # -> data/chunks/
 uv run python -m rag.chunk contextual --size 400          # needs LM Studio (helper model)
+uv run python -m rag.caption                              # needs the vision model (see CLAUDE.md)
+uv run python -m rag.chunk structure --size 400 --captions # Phase 02 final config
 
 # Evaluation
 uv run python -m eval.phase02_chunking.eval_numpy         # every chunk file vs golden set

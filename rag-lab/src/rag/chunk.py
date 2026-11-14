@@ -272,9 +272,21 @@ def split_table(table: dict, budget: int) -> list[str]:
 class StructureChunker:
     """One section at a time; never mixes sections; tables and figures are their own chunks."""
 
-    def __init__(self, max_tokens: int = 512, overlap: int = 64) -> None:
+    def __init__(self, max_tokens: int = 512, overlap: int = 64, captions: bool = False) -> None:
         self.max_tokens, self.overlap = max_tokens, overlap
-        self.name = f"structure-{max_tokens}-{overlap}"
+        self.name = f"structure-{max_tokens}-{overlap}" + ("-vcap" if captions else "")
+        self.captioner = None
+        if captions:  # Step 5: read vision captions from the cache (run `python -m rag.caption` first)
+            from rag.caption import Captioner
+
+            self.captioner = Captioner(offline=True)
+
+    def figure_text(self, doc: dict, e: dict) -> str:
+        """Printed caption, plus the vision description when captions are on."""
+        parts = [e["text"]] if e["text"] else []
+        if self.captioner and (vision := self.captioner.caption(doc, doc["elements"].index(e))):
+            parts.append(f"Figure description: {vision}")
+        return "\n".join(parts)
 
     def chunk(self, doc: dict) -> list[Chunk]:
         builder = ChunkBuilder(doc, self.name)
@@ -296,8 +308,8 @@ class StructureChunker:
                         builder.add(f"{header}\n{piece}", {e["page"]}, path, "table")
                 elif e["type"] == "figure":
                     flush()
-                    if e["text"]:  # caption only for now; vision caption in Step 5
-                        builder.add(f"{header}\n{e['text']}", {e["page"]}, path, "figure",
+                    if text := self.figure_text(doc, e):  # no caption and no description: skip
+                        builder.add(f"{header}\n{text}", {e["page"]}, path, "figure",
                                     image_path=e.get("image_path"))
                 else:
                     buffer.append(e)
@@ -458,6 +470,8 @@ def print_stats(chunks: list[Chunk], max_tokens: int) -> None:
 def build_chunker(kind: str, args: argparse.Namespace) -> Chunker:
     if kind == "semantic":
         return SemanticChunker(args.size, percentile=args.percentile)
+    if kind == "structure":
+        return StructureChunker(args.size, args.overlap, captions=args.captions)
     return CHUNKERS[kind](args.size, args.overlap)
 
 
@@ -468,6 +482,8 @@ def main() -> None:
     ap.add_argument("--overlap", type=int, default=64, help="overlap in tokens")
     ap.add_argument("--parser", default="docling", help="which parsed output to read")
     ap.add_argument("--show", type=int, default=0, help="print N random chunks to eyeball")
+    ap.add_argument("--captions", action="store_true",
+                    help="structure: add cached vision captions to figure chunks (run rag.caption first)")
     semantic = ap.add_argument_group("semantic")
     semantic.add_argument("--percentile", type=float, default=95, help="break above this distance percentile")
     contextual = ap.add_argument_group("contextual")
@@ -495,6 +511,9 @@ def main() -> None:
         rate = stats["llm_calls"] / stats["seconds"] * 60 if stats["seconds"] and stats["llm_calls"] else 0
         print(f"llm         {stats['llm_calls']} calls, {stats['cache_hits']} cached, "
               f"{stats['seconds']:.0f}s ({rate:.0f} chunks/min)")
+    if captioner := getattr(chunker, "captioner", None):
+        s = captioner.stats
+        print(f"captions    {s['cache_hits']} from cache, {s['missing']} missing (run rag.caption)")
 
     for c in random.Random(0).sample(chunks, min(args.show, len(chunks))):
         print(f"\n----- {c.chunk_id}  [{c.element_type}, {c.n_tokens} tok, pages {c.pages}]\n{c.text}")

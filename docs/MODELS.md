@@ -17,8 +17,8 @@ This document explains **which model plays which role, why it was chosen, what p
 | 3 | **Qwen3-4B-Instruct-2507** (Q4_K_M) | `qwen/qwen3-4b-2507` | Chat | 2.50 GB | ✅ Installed | Fast helper: query rewriting, HyDE, a context line per chunk, grading | Phase 00 |
 | 4 | **gpt-oss-20b** (MXFP4) | `openai/gpt-oss-20b` | Chat (reasoning) | 12.11 GB | ✅ Installed | Grades answers (judge); second agent to compare against | Phase 06 |
 | 5 | **nomic-embed-text-v1.5** | `text-embedding-nomic-embed-text-v1.5` | Embedding | 84 MB | ✅ Installed (built in) | First embedding model; teaches query/document prefixes | Phase 00 |
-| 6 | **Qwen3-Embedding-0.6B** (Q8_0) | `text-embedding-qwen3-embedding-0.6b` | Embedding | 639 MB | ✅ Installed | Main embedding model from Phase 02 onward | Phase 02 |
-| 7 | **Qwen3-Embedding-4B** (optional) | `text-embedding-qwen3-embedding-4b` | Embedding | 2.50 GB | ✅ Installed | "Bigger vs smaller embedding model" comparison | Phases 02–03 |
+| 6 | **Qwen3-Embedding-0.6B** (Q8_0) | `text-embedding-qwen3-embedding-0.6b` | Embedding | 639 MB | ✅ Installed | Compared in Phase 02: 0.85 / 0.74 vs nomic 0.92 / 0.80 → nomic kept. Needs the model card's query instruction verbatim | Phase 02 |
+| 7 | **Qwen3-Embedding-4B** (optional) | `text-embedding-qwen3-embedding-4b` | Embedding | 2.50 GB | ✅ Installed | Phase 02: ties nomic (0.91 / 0.80) but fixes different misses → second retriever in Phase 03 | Phases 02–03 |
 
 Nothing left to download in LM Studio.
 
@@ -143,7 +143,7 @@ You'll compare these on your golden set. Choosing an embedding model **by eviden
 | Model | Where it runs | Dims | Max input | Key features | Why it's in the plan |
 |-------|---------------|------|-----------|--------------|----------------------|
 | **nomic-embed-text-v1.5** ⬇️ | LM Studio (`/v1/embeddings`) | 768 (Matryoshka: down to 64) | 8,192 tokens | Small (137M), fast, long input, **needs task prefixes** (`search_query:` / `search_document:`) | **Phase 01 starting model.** Easiest in LM Studio. Teaches query/document prefixes and Matryoshka truncation (Phase 03). |
-| **Qwen3-Embedding-0.6B** ⬇️ (try 4B later) | LM Studio GGUF or `sentence-transformers` | up to 1,024 (Matryoshka) | 32K tokens | Top-tier retrieval quality for its size, 100+ languages, **instruction-aware queries** | **Main embedding model from Phase 02.** Same family as your generator. The 0.6B vs 4B comparison teaches the size/quality trade-off. |
+| **Qwen3-Embedding-0.6B** ⬇️ (try 4B later) | LM Studio GGUF or `sentence-transformers` | up to 1,024 (Matryoshka) | 32K tokens | Top-tier retrieval quality for its size, 100+ languages, **instruction-aware queries** | **Compared in Phase 02** (nomic won on our corpus; the query instruction must match the model card exactly). Same family as your generator. The 0.6B vs 4B comparison teaches the size/quality trade-off. |
 | **BAAI/bge-m3** | Python (`FlagEmbedding` / `sentence-transformers`) on the GPU | 1,024 | 8,192 tokens | One model outputs **dense + sparse (lexical weights) + multi-vector (ColBERT)** representations; multilingual | **Phase 03 and 05:** learn learned-sparse retrieval and late interaction with a single model. Strong on Hindi and mixed-language text. |
 | **BAAI/bge-small-en-v1.5** or **all-MiniLM-L6-v2** | Python, even on CPU | 384 | 512 / 256 tokens | Tiny and fast; English only; short input limit | **Lab 1a baseline.** Shows how a weak model and a short input limit fail (silent truncation), so you appreciate the better ones. |
 

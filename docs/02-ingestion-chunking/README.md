@@ -10,7 +10,7 @@
 |------|-------|----------|
 | Contextual retrieval, propositions | **Qwen3-4B-Instruct-2507** (LM Studio) | One call per chunk means thousands of calls; a small model fully in VRAM makes that practical |
 | Figure and chart captions | **Qwen3.6-35B-A3B** + mmproj (LM Studio, vision) | Reads images; the meaning of charts is in the picture, not the text layer |
-| Embeddings (new main model) | **Qwen3-Embedding-0.6B** (LM Studio or sentence-transformers) vs nomic-embed-v1.5 | 32K-token input means no silent truncation of large chunks; multilingual; compare it with nomic in the ablation |
+| Embeddings (compared; **nomic kept**, see Outcome) | **Qwen3-Embedding-0.6B** (LM Studio or sentence-transformers) vs nomic-embed-v1.5 | 32K-token input means no silent truncation of large chunks; multilingual; compare it with nomic in the ablation |
 | Semantic chunking | the same embedding model | Sentence-to-sentence similarity finds topic boundaries |
 
 ---
@@ -222,14 +222,30 @@ Also try 2–3 chunk sizes (256 / 512 / 1,024) for your best strategy, and the *
 - Ablation table in `results.md` and a one-paragraph decision: which chunker you chose and why
 - Grow `golden.jsonl` to **40 questions**, with more tables and figures
 
+## Outcome (completed 2026-11-14)
+
+**Chosen pipeline:** Docling (OCR off) → structure-aware chunks, **400 / 64 tokens**, section path prepended, tables row-split with the header repeated → figure chunks with a **vision-LLM description** (Qwen3.6-35B-A3B) → **nomic-embed-text-v1.5**.
+Golden v4 (53 answerable): **hit@5 0.92, MRR 0.80**, chart questions fig@5 **0.93** (Phase 02 start: pypdf recursive 0.85 / 0.71).
+
+| What was tried | Verdict |
+|----------------|---------|
+| Docling vs pypdf vs PyMuPDF | Docling: reading order, tables, figure crops |
+| Recursive / structure-aware / semantic | Structure-aware; semantic dropped (no gain, extra cost) |
+| Contextual retrieval (Qwen3-4B) | Not adopted: +0.05 MRR at 512, −0.06 at 400. Retry with BM25 (Phase 03) |
+| Vision captions | **Adopted:** chart fig@5 0.53 → 0.93 |
+| Qwen3-Embedding-0.6B / 4B vs nomic | nomic kept. 0.6B 0.85 / 0.74; 4B ties (0.91 / 0.80) at 30x the size, but solves different questions → second retriever in Phase 03 |
+| Chunk size 256 / 400 / 512 / 1024 | 400 (256–512 flat, 1024 −7 points) |
+
+Not done: propositional and late chunking (read only), table summaries (tables already score 1.00). Open misses: q013, q021 (paraphrase), q023 (topic-word trap), q048 (description dropped the figure's example text). Full evidence: [rag-lab/eval/phase02_chunking/results.md](../../rag-lab/eval/phase02_chunking/results.md), findings 1–30.
+
 ## Exit checklist
 
-- [ ] I can pick a parser for a given document type and explain why.
-- [ ] I can explain why chunk size is a trade-off and how I'd tune it.
-- [ ] I know when semantic chunking helps and when it's wasted cost.
-- [ ] I can explain contextual retrieval and late chunking.
-- [ ] My tables never get split without their header row.
-- [ ] Every chunk has page, section, doc version and hash metadata.
+- [x] I can pick a parser for a given document type and explain why. (Lab 2a shoot-out; two-column papers)
+- [x] I can explain why chunk size is a trade-off and how I'd tune it. (findings 29–30)
+- [x] I know when semantic chunking helps and when it's wasted cost. (semantic: no gain on structured papers)
+- [x] I can explain contextual retrieval and late chunking. (contextual: measured, size-dependent; late chunking: read only)
+- [x] My tables never get split without their header row. (`split_table`, `test_table_split_repeats_caption_and_header`)
+- [x] Every chunk has page, section, doc version and hash metadata. (`Chunk` schema, deterministic ids, `test_chunk_ids_are_deterministic`)
 
 ## Common pitfalls
 

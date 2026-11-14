@@ -51,10 +51,16 @@ def is_relevant(chunk, golden_row):
             and any(page in golden_row["pages"] for page in chunk_pages(chunk)))
 
 
-def rank_of_first_relevant(retrieved_chunks, golden_row):
-    """Position (1, 2, 3...) of the first relevant chunk, or None if none was found."""
+def rank_of_first_relevant(retrieved_chunks, golden_row, element_type=None):
+    """Position (1, 2, 3...) of the first relevant chunk, or None if none was found.
+
+    element_type="figure" asks a stricter question for chart questions: was the
+    FIGURE chunk itself retrieved, not just any text from the same page? Page-level
+    hits overstate chart performance (the answer is in the image, not the page text).
+    """
     for position, chunk in enumerate(retrieved_chunks, start=1):
-        if is_relevant(chunk, golden_row):
+        if is_relevant(chunk, golden_row) and (
+                element_type is None or chunk.get("element_type") == element_type):
             return position
     return None
 
@@ -69,6 +75,8 @@ def evaluate(store):
         retrieved_chunks, top_score = retrieve_from_store(store, golden_row["question"])
         answerable = golden_row["doc"] is not None
         rank = rank_of_first_relevant(retrieved_chunks, golden_row) if answerable else None
+        figure_rank = (rank_of_first_relevant(retrieved_chunks, golden_row, "figure")
+                       if answerable and golden_row["type"] == "chart" else None)
 
         results.append({
             "id": golden_row["id"],
@@ -77,6 +85,8 @@ def evaluate(store):
             "rank": rank,
             "hit": rank is not None,                     # found in the top K?
             "reciprocal_rank": 1 / rank if rank else 0,  # 1.0, 0.5, 0.33 ... or 0
+            "figure_rank": figure_rank,                  # chart questions only
+            "figure_hit": figure_rank is not None,
             "top_score": round(float(top_score), 3),
             "wanted_pages": golden_row["pages"],
             "got_pages": [chunk["page"] for chunk in retrieved_chunks],
@@ -84,6 +94,7 @@ def evaluate(store):
 
     results_table = pd.DataFrame(results)
     results_table["rank"] = results_table["rank"].astype("Int64")   # show 1, 2 ... and <NA>, not 1.0 and NaN
+    results_table["figure_rank"] = results_table["figure_rank"].astype("Int64")
     return results_table
 
 
@@ -95,7 +106,7 @@ def report(results_table, store_name):
 
     print(f"\n========== {store_name} ==========")
     print("\nPer question:")
-    print(answerable[["id", "type", "rank", "top_score", "wanted_pages", "got_pages"]]
+    print(answerable[["id", "type", "rank", "figure_rank", "top_score", "wanted_pages", "got_pages"]]
           .to_string(index=False))
 
     print(f"\nBy question type (hit@{TOP_K} and MRR):")
@@ -109,6 +120,10 @@ def report(results_table, store_name):
     hit_rate = answerable["hit"].mean()
     mrr = answerable["reciprocal_rank"].mean()
     print(f"\nOVERALL ({store_name})  hit@{TOP_K} = {hit_rate:.2f}   MRR = {mrr:.2f}")
+    charts = answerable[answerable["type"] == "chart"]
+    if len(charts):
+        print(f"CHART: figure chunk in top {TOP_K} = {charts['figure_hit'].mean():.2f} "
+              f"({int(charts['figure_hit'].sum())}/{len(charts)})")
 
     print("\nUnanswerable questions (top score should ideally be low):")
     print(unanswerable[["id", "top_score", "got_pages"]].to_string(index=False))
