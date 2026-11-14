@@ -3,6 +3,7 @@
 **Setup:** 800-char chunks / 150 overlap (pypdf) · nomic-embed-text-v1.5 · top-5 · corpus: 2 PDFs (1706.03762, 2005.11401).
 **Scripts:** `uv run python -m eval.phase01_naive.eval_numpy` (also `eval_faiss`, `eval_chroma`; all give the same numbers).
 **Failure analysis:** [failures.md](failures.md)
+**Vector stores (NumPy vs FAISS vs Chroma):** same top-5 and same metrics on all three; findings and timings in [lab1d_vector_stores/README.md](../../labs/phase01_naive_rag/lab1d_vector_stores/README.md)
 
 | Config                         | hit@5 | MRR  | notes |
 |--------------------------------|-------|------|-------|

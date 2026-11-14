@@ -20,7 +20,7 @@ rag-lab/
 │   ├── phase01_naive_rag/
 │   │   ├── lab1a_embeddings/    weak vs strong embedding model, truncation test
 │   │   ├── lab1c_naive_rag/     naive_rag.py: RAG from scratch with NumPy
-│   │   ├── lab1d_vector_stores/ same pipeline on FAISS and Chroma
+│   │   ├── lab1d_vector_stores/ same pipeline on FAISS and Chroma (findings: README.md)
 │   │   └── visualize/           plot chunk embeddings in 2D/3D
 │   └── phase02_ingestion/
 │       └── lab2a_parsing/       inspect_pages, parser_shootout, defects.md, shootout.md
