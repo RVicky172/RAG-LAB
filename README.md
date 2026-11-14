@@ -219,9 +219,19 @@ Choose **one** document set and keep it for the whole journey, so your metrics s
 
 Tick these off as you go:
 
-- [ ] 00 Prerequisites: LM Studio server, models loaded, first local LLM call, tokens and latency
-- [ ] 01 Naive RAG from scratch + 20-question golden set
-- [ ] 02 Parsing + 4 chunking strategies compared
+- [x] 00 Prerequisites: LM Studio server, models loaded, first local LLM call, tokens and latency
+- [x] 01 Naive RAG from scratch + 20-question golden set (21 q, golden v2; baseline hit@5 0.78 / MRR 0.72)
+- [ ] 02 Parsing + 4 chunking strategies compared (**in progress**, details in [Phase 02 results](rag-lab/eval/phase02_chunking/results.md))
+  - [x] Step 1: look at the data, defects log ([defects.md](rag-lab/labs/phase02_ingestion/lab2a_parsing/defects.md))
+  - [x] Lab 2a: parser shoot-out, pypdf vs PyMuPDF vs Docling ([shootout.md](rag-lab/labs/phase02_ingestion/lab2a_parsing/shootout.md)) → Docling
+  - [x] `rag/parse.py`: typed elements, page + section path, cleaning, figure crops
+  - [x] `rag/chunk.py`: recursive, structure-aware (table row-split + header), semantic; `rag/enrich.py`: contextual retrieval
+  - [x] Step 4: chunk metadata schema with deterministic ids
+  - [x] Step 6: ablation on NumPy / FAISS / Chroma → Docling + structure-aware 0.83 / 0.74 (contextual 0.77 MRR)
+  - [ ] Contextual retrieval at `--size 400` (size-fair re-test)
+  - [ ] Step 5: vision captions for figures (Qwen3.6-35B-A3B), tables summary
+  - [ ] Embedding model as a variable: nomic-v1.5 vs Qwen3-Embedding-0.6B; chunk sizes 256 / 512 / 1024
+  - [ ] Grow `golden.jsonl` to 40 questions (tables + figures, the two-column papers), re-run the ablation
 - [ ] 03 ANN benchmark + hybrid search with RRF
 - [ ] 04 Query transformation module
 - [ ] 05 Reranking + parent-child + context compression
