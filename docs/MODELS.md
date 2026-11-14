@@ -6,32 +6,33 @@ This document explains **which model plays which role, why it was chosen, what p
 
 ---
 
-## 0. Final model checklist (what to download)
+## 0. Final model checklist
 
-### Models in LM Studio (6 total: 2 already installed, 4 to download)
+### Models in LM Studio: ✅ all installed (7 models, 58.45 GB, checked with `lms ls`)
 
-| # | Model (search this name in LM Studio's Discover tab) | Type | Quant | Approx. size | Status | Job | First needed |
+| # | Model | LM Studio name (use in `.env`) | Type | Size | Status | Job | First needed |
 |---|---|---|---|---|---|---|---|
-| 1 | **Qwen3-30B-A3B-Instruct-2507** | Chat | Q4_K_M | ~18 GB | ✅ Installed | Main model: writes the final answers; also the agent in Phase 07 | Phase 00 |
-| 2 | **Qwen3.6-35B-A3B** (keep the `mmproj` file with it) | Chat + vision | Q4_K_M | ~21 GB | ✅ Installed | Captions figures and charts; answers questions from page images | Phase 02 |
-| 3 | **Qwen3-4B-Instruct-2507** | Chat | Q4_K_M (or Q8_0) | ~2.5 GB (4.3 GB) | ⬇️ Download | Fast helper: query rewriting, HyDE, a context line per chunk, grading | Phase 00 |
-| 4 | **gpt-oss-20b** | Chat (reasoning) | MXFP4 (default) | ~12 GB | ⬇️ Download | Grades answers (judge); second agent to compare against | Phase 06 |
-| 5 | **nomic-embed-text-v1.5** | Embedding | F16 / Q8 | ~0.15 GB | ⬇️ Download | First embedding model; teaches query/document prefixes | Phase 00 |
-| 6 | **Qwen3-Embedding-0.6B** | Embedding | Q8_0 | ~0.6 GB | ⬇️ Download | Main embedding model from Phase 02 onward | Phase 02 |
+| 1 | **Qwen3-30B-A3B-Instruct-2507** (Q4_K_M) | `qwen/qwen3-30b-a3b-2507` | Chat | 18.56 GB | ✅ Installed | Main model: writes the final answers; also the agent in Phase 07 | Phase 00 |
+| 2 | **Qwen3.6-35B-A3B** (Q4_K_M + `mmproj` vision file) | `qwen3.6-35b-a3b` | Chat + vision | 22.07 GB | ✅ Installed | Captions figures and charts; answers questions from page images | Phase 02 |
+| 3 | **Qwen3-4B-Instruct-2507** (Q4_K_M) | `qwen/qwen3-4b-2507` | Chat | 2.50 GB | ✅ Installed | Fast helper: query rewriting, HyDE, a context line per chunk, grading | Phase 00 |
+| 4 | **gpt-oss-20b** (MXFP4) | `openai/gpt-oss-20b` | Chat (reasoning) | 12.11 GB | ✅ Installed | Grades answers (judge); second agent to compare against | Phase 06 |
+| 5 | **nomic-embed-text-v1.5** | `text-embedding-nomic-embed-text-v1.5` | Embedding | 84 MB | ✅ Installed (built in) | First embedding model; teaches query/document prefixes | Phase 00 |
+| 6 | **Qwen3-Embedding-0.6B** (Q8_0) | `text-embedding-qwen3-embedding-0.6b` | Embedding | 639 MB | ✅ Installed | Main embedding model from Phase 02 onward | Phase 02 |
+| 7 | **Qwen3-Embedding-4B** (optional) | `text-embedding-qwen3-embedding-4b` | Embedding | 2.50 GB | ✅ Installed | "Bigger vs smaller embedding model" comparison | Phases 02–03 |
 
-**Optional:** **Qwen3-Embedding-4B** (Q4_K_M, ~2.5 GB) for the "bigger embedding model vs smaller" comparison in Phases 02–03.
-
-**Total new downloads:** about 16 GB (19 GB with the optional one).
+Nothing left to download in LM Studio.
 
 ### Python models (not in LM Studio; they download automatically from Hugging Face)
 
-| Model | Job | Phase |
-|---|---|---|
-| `all-MiniLM-L6-v2` | Tiny embedding model, used to show what a weak model gets wrong | 01 |
-| `BAAI/bge-m3` | Three kinds of search vectors from one model (dense, sparse, multi-vector), for comparison | 03 |
-| `BAAI/bge-reranker-v2-m3` | Main reranker (cross-encoder) | 05 |
-| `BAAI/bge-reranker-base` | Faster reranker, as a speed baseline | 05 |
-| `vidore/colqwen2.5` | Searches page screenshots directly | 07 |
+| Model | Job | Phase | Status |
+|---|---|---|---|
+| `all-MiniLM-L6-v2` | Tiny embedding model, used to show what a weak model gets wrong | 01 | ⏳ Downloads on first use |
+| `BAAI/bge-m3` | Three kinds of search vectors from one model (dense, sparse, multi-vector), for comparison | 03 | ⏳ Downloads on first use (needs `uv add FlagEmbedding`) |
+| `BAAI/bge-reranker-v2-m3` | Main reranker (cross-encoder) | 05 | ⏳ Downloads on first use |
+| `BAAI/bge-reranker-base` | Faster reranker, as a speed baseline | 05 | ⏳ Downloads on first use |
+| `vidore/colqwen2.5` | Searches page screenshots directly | 07 | ⏳ Downloads on first use (needs `uv add colpali-engine`) |
+
+These are **not** missing: they download automatically (to `~/.cache/huggingface/hub`) the first time a lab uses them. The packages they need (`sentence-transformers`, `transformers`, CUDA `torch`) are already installed in `rag-lab`. Phase-specific libraries are added with `uv add` when that phase starts.
 
 > **Why rerankers aren't in LM Studio:** LM Studio's API serves chat and embedding models, not rerankers. The reranker runs in your Python process on the GPU (`sentence-transformers` `CrossEncoder`), next to LM Studio. See [Phase 05](05-post-retrieval-reranking/README.md).
 
@@ -189,7 +190,7 @@ If memory runs short: unload what you don't need, lower the context length, or l
 ## 5. LM Studio setup (step by step)
 
 1. **Open the LM Studio app once.** Your `lms` CLI currently reports "no running LM Studio", so the app (or its server) must be running for the CLI and the API to work. If `lms` isn't on your PATH, run `~/.lmstudio/bin/lms bootstrap` once.
-2. **Download the extra models** (Discover tab, search by name): `Qwen3-4B-Instruct-2507`, `gpt-oss-20b`, `nomic-embed-text-v1.5`, `Qwen3-Embedding-0.6B` (GGUF).
+2. **Download the extra models** (Discover tab, search by name): `Qwen3-4B-Instruct-2507`, `gpt-oss-20b`, `nomic-embed-text-v1.5`, `Qwen3-Embedding-0.6B` (GGUF). ✅ Done on this machine (see §0).
 3. **Start the local server:** Developer tab → Start Server, or `lms server start`. It serves an **OpenAI-compatible API** at `http://localhost:1234/v1`.
 4. **Load the generator with a real context length.** ⚠️ The default context length is often small (e.g. 4,096 tokens). Retrieved chunks then get **silently truncated**. Set **16,384–32,768**:
    ```bash

@@ -38,10 +38,24 @@ Running models locally makes these limits *visible*: you set the context length 
 | File | Content | Purpose |
 |------|---------|---------|
 | `.python-version` | `3.12` | Tells uv which Python to use in this folder |
-| `pyproject.toml` | `requires-python = ">=3.12,<3.13"`, the cu128 index, `torch` dependency | Project definition |
-| `uv.lock` | `torch 2.11.0+cu128` resolved for Python 3.12 | Exact, reproducible versions |
+| `pyproject.toml` | `requires-python = ">=3.12,<3.13"`, the cu128 index, all base packages | Project definition |
+| `uv.lock` | Exact versions, incl. `torch 2.11.0+cu128` for Python 3.12 | Reproducible installs |
+| `.venv/` | Created by `uv sync` (git-ignored) | The environment itself |
+| `.env` | LM Studio URL + model names (git-ignored) | Model configuration for all labs |
 
-**Your next step** is step 4 below (`uv sync`). Steps 1–3 show how the project was set up, so you can repeat it for a new project.
+**✅ Verified on this machine:** `3.12.13  2.11.0+cu128  True  NVIDIA GeForce RTX 5080`
+
+| Package | Installed version |
+|---------|-------------------|
+| torch (CUDA 12.8) | 2.11.0+cu128 |
+| openai | 3.50.0 |
+| sentence-transformers | 6.3.0 |
+| transformers | 5.22.2 |
+| numpy · pandas | 2.5.4 · 3.1.1 |
+| pydantic · python-dotenv · tqdm | 2.14.3 · 1.2.4 · 4.70.1 |
+| pytest · ipykernel (dev) | 9.2.0 · 7.4.0 |
+
+The environment is complete for Phases 00–01. Later phases add their own libraries with `uv add` when they start (e.g. `pypdf`, `faiss-cpu`, `rank-bm25`, `FlagEmbedding`, `docling`, `fastapi uvicorn`). Steps 1–5 below show how the project was set up, so you can repeat it for a new project or on a new machine (there, just run `uv sync`).
 
 #### Setup with uv, step by step (Git Bash; the same commands work in PowerShell)
 
@@ -147,9 +161,12 @@ Common mistakes in Git Bash:
 | Qwen3-30B-A3B-Instruct-2507 | `qwen/qwen3-30b-a3b-2507` | ✅ |
 | Qwen3.6-35B-A3B (+ vision) | `qwen3.6-35b-a3b` | ✅ |
 | Qwen3-4B-Instruct-2507 | `qwen/qwen3-4b-2507` | ✅ |
+| gpt-oss-20b | `openai/gpt-oss-20b` | ✅ |
 | nomic-embed-text-v1.5 | `text-embedding-nomic-embed-text-v1.5` | ✅ (built in) |
 | Qwen3-Embedding-0.6B | `text-embedding-qwen3-embedding-0.6b` | ✅ |
-| gpt-oss-20b | — | ❌ Download before Phase 06 |
+| Qwen3-Embedding-4B (optional) | `text-embedding-qwen3-embedding-4b` | ✅ |
+
+All 7 models are installed (58.45 GB). Nothing left to download.
 
 1. Open the LM Studio app (the `lms` CLI needs the app or its server running). If `lms` isn't on your PATH, run `~/.lmstudio/bin/lms bootstrap` once.
 2. Developer tab → **Start Server** (or `lms server start`). The API is at `http://localhost:1234/v1`.
@@ -163,7 +180,7 @@ Common mistakes in Git Bash:
    In the app's load settings, also look at **GPU offload** and (in recent versions) **keeping MoE expert weights on the CPU**. With 16 GB of VRAM and 127 GB of RAM, that's how the 30B MoE model runs fast.
 4. Check: `curl http://localhost:1234/v1/models`.
 
-Create `rag-lab/.env` (git-ignored):
+`rag-lab/.env` (git-ignored) ✅ already created with these values:
 
 ```ini
 # Model names exactly as `lms ls` reports them on this machine
@@ -172,10 +189,11 @@ LMSTUDIO_URL=http://localhost:1234/v1
 GEN_MODEL=qwen/qwen3-30b-a3b-2507
 HELPER_MODEL=qwen/qwen3-4b-2507
 VISION_MODEL=qwen3.6-35b-a3b
-JUDGE_MODEL=openai/gpt-oss-20b               # Phase 06; check the name with `lms ls` after downloading
+JUDGE_MODEL=openai/gpt-oss-20b
 EMBED_PROVIDER=lmstudio
 EMBED_MODEL=text-embedding-nomic-embed-text-v1.5
-# From Phase 02: EMBED_MODEL=text-embedding-qwen3-embedding-0.6b
+# From Phase 02: text-embedding-qwen3-embedding-0.6b
+# Phase 02-03 size comparison: text-embedding-qwen3-embedding-4b
 ```
 
 Add `.env` and `.venv/` to `rag-lab/.gitignore`. **Do** commit `pyproject.toml`, `uv.lock` and `.python-version`: they let anyone (or future you) recreate the exact environment with `uv sync`.

@@ -11,8 +11,8 @@ __pycache__/
 !.env.example
 
 # Local data, indexes and model artifacts (can be large or private)
-rag-lab/data/raw/
-rag-lab/data/processed/
+rag-lab/data/*
+!rag-lab/data/README.md
 *.faiss
 *.npy
 chroma/

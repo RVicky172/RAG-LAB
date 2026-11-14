@@ -6,7 +6,7 @@ Each phase has its own folder under [`docs/`](docs/) with a `README.md` that cov
 
 > **Companion document:** [RAG_Production_Mastery_Guide.docx](docs/RAG_Production_Mastery_Guide.docx) is your reference and interview book (AWS-focused). Every phase README links to the matching sections of it. Phases 9 and 10 follow its Part 3 (projects) and Part 4 (interview prep).
 
-> **Model guide:** [MODELS.md](docs/MODELS.md) says which local model plays which role, why it was chosen, what problem it solves, how to set it up in LM Studio, and what replaces it on AWS Bedrock. **Start with its §0 "Final model checklist"**: 6 LM Studio models (2 installed, 4 to download, ~16 GB) and 5 Python models.
+> **Model guide:** [MODELS.md](docs/MODELS.md) says which local model plays which role, why it was chosen, what problem it solves, how to set it up in LM Studio, and what replaces it on AWS Bedrock. **Its §0 "Final model checklist"** lists all 7 LM Studio models (✅ all installed, 58.45 GB) and the 5 Python models that download on first use.
 
 ## Strategy: local first, then AWS
 
@@ -32,8 +32,26 @@ All code calls models through two thin wrappers (`rag/llm.py`, `rag/embed.py`, b
 
 Full explanation and troubleshooting: [Phase 00, Step 1](docs/00-prerequisites/README.md#step-1-python-environment).
 
+### Setup status (verified on this machine)
+
+| Item | Status | Details |
+|------|--------|---------|
+| GPU / RAM | ✅ | RTX 5080 (16 GB VRAM), 127 GB RAM |
+| Python env (`rag-lab/.venv`) | ✅ | Python 3.12.13 via uv; `torch 2.11.0+cu128`, CUDA available |
+| Base packages | ✅ | openai, sentence-transformers, transformers, numpy, pandas, pydantic, python-dotenv, tqdm; dev: pytest, ipykernel |
+| LM Studio chat models | ✅ 4/4 | Qwen3-30B-A3B-2507 (generator), Qwen3-4B-2507 (helper), Qwen3.6-35B-A3B (vision), gpt-oss-20b (judge) |
+| LM Studio embedding models | ✅ 3/3 | nomic-embed-text-v1.5, Qwen3-Embedding-0.6B, Qwen3-Embedding-4B |
+| `rag-lab/.env` | ✅ | LM Studio URL + exact model names (git-ignored) |
+| Python models (rerankers, bge-m3, ColQwen) | ⏳ | Download automatically the first time Phases 01/03/05/07 use them |
+| Phase-specific libraries | ⏳ | Added with `uv add` when each phase starts (pypdf, faiss, rank-bm25, docling, fastapi…) |
+| LM Studio server | ▶️ Start each session | `lms server start` (or Developer tab → Start Server), then load models |
+
+**Everything needed to start Phase 00/01 is in place.** Each session: start the LM Studio server, load the generator with a 32K context, and run labs with `uv run`.
+
+### Commands
+
 ```bash
-# 1. Python env: uv + Python 3.12 + CUDA PyTorch (rag-lab/ is already configured)
+# 1. Python env: uv + Python 3.12 + CUDA PyTorch (✅ already done here; on a new machine just run `uv sync`)
 cd /d/CodeBase/AI/RAG/rag-lab
 uv sync                                    # creates .venv on 3.12, installs torch 2.11.0+cu128 (~3 GB first time)
 uv add openai numpy pandas python-dotenv pydantic tqdm sentence-transformers transformers
@@ -130,28 +148,34 @@ RAG/
 │   ├── 01-foundations-naive-rag/README.md
 │   ├── ...
 │   └── 10-interview-prep/README.md
-└── rag-lab/                      ← YOUR code, grows phase by phase
+└── rag-lab/                      ← YOUR code, grows phase by phase (full map: rag-lab/README.md)
     ├── pyproject.toml            ← dependencies + CUDA torch index (uv)
     ├── uv.lock                   ← exact versions (commit it)
     ├── .python-version           ← 3.12 (commit it)
     ├── .venv/                    ← created by `uv sync` (git-ignored)
     ├── .env                      ← provider + model settings, later AWS profile (git-ignored!)
-    ├── data/
-    │   ├── raw/                  ← source PDFs, HTML, Markdown
-    │   └── processed/            ← parsed elements, chunks (JSONL)
-    ├── rag/
-    │   ├── llm.py                ← one wrapper for LLM calls (Phase 01)
-    │   ├── embed.py              ← embedding wrapper (Phase 01)
-    │   ├── parse.py  chunk.py    ← Phase 02
+    ├── src/rag/                  ← THE LIBRARY (installed package `rag`)
+    │   ├── llm.py  embed.py  vector_store.py   ← Phase 01
+    │   ├── parse.py  chunk.py  enrich.py       ← Phase 02
     │   ├── index.py  search.py   ← Phase 03
     │   ├── query.py              ← Phase 04
     │   ├── rerank.py context.py  ← Phase 05
     │   ├── pipeline.py           ← the end-to-end RAG chain
     │   └── agent.py              ← Phase 07
+    ├── labs/                     ← one-off learning scripts, one folder per phase
+    │   ├── phase00_prerequisites/
+    │   ├── phase01_naive_rag/    ← lab1a_embeddings, lab1c_naive_rag, lab1d_vector_stores, visualize
+    │   └── phase02_ingestion/    ← lab2a_parsing
     ├── eval/
     │   ├── golden.jsonl          ← starts in Phase 01, grows forever
-    │   ├── run_eval.py           ← Phase 06
-    │   └── results.md            ← ablation table: config → metrics
+    │   ├── eval_core.py          ← shared scoring (hit@5, MRR)
+    │   ├── results.md            ← summary: best config per phase
+    │   ├── phase01_naive/        ← scripts, results.md, failures.md
+    │   └── phase02_chunking/     ← scripts, results.md (ablation table), runs.jsonl
+    ├── data/                     ← git-ignored
+    │   ├── raw/                  ← source PDFs
+    │   ├── processed/            ← parsed elements, chunks, cached vectors
+    │   └── indexes/phaseNN/      ← vector indexes per phase
     ├── api/                      ← FastAPI service (Phase 08)
     └── tests/
 ```
