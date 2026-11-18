@@ -20,3 +20,18 @@ services:
       PHOENIX_DISABLE_AGENT_ASSISTANT: "true" # we don't need its built-in AI assistant
     volumes:
       - ./data/phoenix:/mnt/data              # traces survive restarts
+
+
+  app:                     # Doc 5: FastAPI + the React UI, built from the Dockerfile
+    build: .
+    profiles: ["app"]      # only started with --profile app, so Docs 1-4 keep running just Qdrant + Phoenix
+    ports:
+      - "8000:8000"        # UI at http://localhost:8000, API docs at /docs
+    env_file: .env         # the same settings as outside Docker...
+    environment:           # ...except the addresses, which differ inside a container:
+      QDRANT_URL: http://qdrant:6333      # services in one Compose file find each other by name
+      PHOENIX_URL: http://phoenix:6006
+      LLM_BASE_URL: http://host.docker.internal:1234/v1   # LM Studio on your PC ("localhost" would be the container)
+    depends_on:
+      - qdrant
+      - phoenix

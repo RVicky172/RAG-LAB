@@ -395,9 +395,9 @@ Pick one:
 
 ## Checklist
 
-- [ ] I can explain state, node, edge and conditional edge, and why `create_agent` is also a graph.
-- [ ] I followed one question's path through the graph in Phoenix (retrieve → grade → rewrite → retrieve → generate).
-- [ ] I compared the agent with plain RAG on the same questions, and can name what it costs (LLM calls, tokens, latency).
-- [ ] I can say when a self-correcting step is worth it, and when it isn't.
+- [x] I can explain state, node, edge and conditional edge, and why `create_agent` is also a graph.
+- [x] I followed one question's path through the graph in Phoenix (retrieve → grade → rewrite → retrieve → generate).
+- [x] I compared the agent with plain RAG on the same questions, and can name what it costs (LLM calls, tokens, latency).
+- [x] I can say when a self-correcting step is worth it, and when it isn't.
 
-**Next:** [Doc 5: Deploy on AWS](05-deploy-on-aws.md)
+**Next:** [Doc 5: API, UI and Docker](05-api-ui-and-docker.md)

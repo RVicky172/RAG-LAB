@@ -330,9 +330,9 @@ Pick one:
 
 ## Checklist
 
-- [ ] I can draw the supervisor pattern and explain "agents as tools".
-- [ ] I can name the cost of multi-agent (LLM calls, tokens, latency) from Phoenix and the reports, and decide when it's worth it.
-- [ ] I compared single vs multi-agent on the same questions and metrics.
-- [ ] I know why routing (which specialist was called) needs its own metric.
+- [x] I can draw the supervisor pattern and explain "agents as tools".
+- [x] I can name the cost of multi-agent (LLM calls, tokens, latency) from Phoenix and the reports, and decide when it's worth it.
+- [x] I compared single vs multi-agent on the same questions and metrics.
+- [x] I know why routing (which specialist was called) needs its own metric.
 
 **Next:** [Doc 4: LangGraph agent and its evaluation](04-langgraph-agent-and-evaluation.md)

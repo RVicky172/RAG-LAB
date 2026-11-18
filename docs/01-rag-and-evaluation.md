@@ -1760,11 +1760,11 @@ Record each run as a row in the README results table.
 
 ## Checklist
 
-- [ ] I can explain ingest vs query, and what a chunk, an embedding and a vector DB are.
-- [ ] I saw my chunks in the Qdrant dashboard, and a RAG trace (search + LLM call) in Phoenix.
-- [ ] I can say which metric points to retrieval and which to generation.
-- [ ] I opened the HTML report and can say what each part shows, including the token split of a context window.
-- [ ] I read at least two failing questions and decided whether retrieval, the LLM or the judge was wrong.
-- [ ] I ran one experiment and recorded the before/after numbers.
+- [x] I can explain ingest vs query, and what a chunk, an embedding and a vector DB are.
+- [x] I saw my chunks in the Qdrant dashboard, and a RAG trace (search + LLM call) in Phoenix.
+- [x] I can say which metric points to retrieval and which to generation.
+- [x] I opened the HTML report and can say what each part shows, including the token split of a context window.
+- [x] I read at least two failing questions and decided whether retrieval, the LLM or the judge was wrong.
+- [x] I ran one experiment and recorded the before/after numbers.
 
 **Next:** [Doc 2: AI agent and its evaluation](02-ai-agent-and-evaluation.md)

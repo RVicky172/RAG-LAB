@@ -613,9 +613,9 @@ Change **one** thing, re-run, compare:
 
 ## Checklist
 
-- [ ] I can explain the agent loop and why the tool docstring matters.
-- [ ] I read a trace (in the terminal and in Phoenix) and pointed to the tool call, the tool result and the final answer.
-- [ ] I can explain why an agent needs a *behaviour* metric (tools) and not just an *outcome* metric (goal).
-- [ ] I changed the prompt or a docstring and measured the effect.
+- [x] I can explain the agent loop and why the tool docstring matters.
+- [x] I read a trace (in the terminal and in Phoenix) and pointed to the tool call, the tool result and the final answer.
+- [x] I can explain why an agent needs a *behaviour* metric (tools) and not just an *outcome* metric (goal).
+- [x] I changed the prompt or a docstring and measured the effect.
 
 **Next:** [Doc 3: Multi-agent system and its evaluation](03-multi-agent-and-evaluation.md)

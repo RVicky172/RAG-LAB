@@ -21,3 +21,7 @@ Thumbs.db
 .vscode/
 .idea/
 ~$*
+
+# React UI (Doc 5): installed and built by npm
+ui/node_modules/
+ui/dist/

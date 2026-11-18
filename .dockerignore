@@ -1,0 +1,9 @@
+# Keeps secrets and big folders out of the image (and makes builds faster).
+.venv
+.env
+.git
+data/qdrant
+data/phoenix
+eval/*/results
+ui/node_modules
+ui/dist
