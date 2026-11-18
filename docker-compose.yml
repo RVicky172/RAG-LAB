@@ -1,0 +1,8 @@
+# Local infrastructure. Start: docker compose up -d   Stop: docker compose down
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.16.3
+    ports:
+      - "6333:6333"          # REST API + web dashboard at http://localhost:6333/dashboard
+    volumes:
+      - ./data/qdrant:/qdrant/storage   # vectors survive restarts

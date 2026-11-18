@@ -1,0 +1,8 @@
+{"question": "How many attention heads does the base Transformer use?", "expected_tools": ["search_papers"], "reference": "8 attention heads."}
+{"question": "How much higher is the big Transformer's EN-DE BLEU score than the base model's?", "expected_tools": ["search_papers", "calculator"], "reference": "Big 28.4 vs base 27.3 BLEU, so 1.1 BLEU higher."}
+{"question": "What is 512 divided by 8?", "expected_tools": ["calculator"], "reference": "64."}
+{"question": "Divide the base Transformer's d_model by its number of attention heads. What do you get?", "expected_tools": ["search_papers", "calculator"], "reference": "d_model 512 / 8 heads = 64."}
+{"question": "Which generator and which retriever does the RAG paper use?", "expected_tools": ["search_papers"], "reference": "Generator: BART (BART-large). Retriever: DPR (Dense Passage Retriever)."}
+{"question": "Which three quality aspects does RAGAS evaluate?", "expected_tools": ["search_papers"], "reference": "Faithfulness, answer relevance and context relevance."}
+{"question": "Hi! What can you help me with?", "expected_tools": [], "reference": "The assistant greets the user and says it can answer questions about the AI research papers in its library, without searching."}
+{"question": "What learning rate was used to train GPT-4?", "expected_tools": ["search_papers"], "reference": "The papers do not contain this information."}

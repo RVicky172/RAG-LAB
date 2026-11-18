@@ -1,0 +1,11 @@
+{"question": "How many attention heads does the base Transformer model use?", "reference": "The base Transformer uses 8 parallel attention heads (h = 8).", "source": "1706.03762v7.pdf"}
+{"question": "What BLEU score did the big Transformer get on WMT 2014 English-to-German?", "reference": "The big Transformer achieved 28.4 BLEU on WMT 2014 English-to-German.", "source": "1706.03762v7.pdf"}
+{"question": "Why does the Transformer need positional encodings?", "reference": "Because the model has no recurrence and no convolution, it needs positional encodings (sine and cosine functions) to inject information about the order of tokens.", "source": "1706.03762v7.pdf"}
+{"question": "Which retriever does the RAG model use?", "reference": "RAG uses a Dense Passage Retriever (DPR): a BERT-based bi-encoder that does maximum inner product search over a dense index of Wikipedia.", "source": "2005.11401v4.pdf"}
+{"question": "What is the difference between RAG-Sequence and RAG-Token?", "reference": "RAG-Sequence uses the same retrieved document to generate the whole output sequence, while RAG-Token can use a different retrieved document for each generated token.", "source": "2005.11401v4.pdf"}
+{"question": "Which generator model does RAG use?", "reference": "RAG uses BART-large as its generator.", "source": "2005.11401v4.pdf"}
+{"question": "What does 'lost in the middle' mean for language models?", "reference": "Language models use information best when it is at the beginning or end of the input context; performance drops when the relevant information is in the middle (a U-shaped curve).", "source": "2307.03172.pdf"}
+{"question": "Which two tasks does the Lost in the Middle paper use in its experiments?", "reference": "Multi-document question answering and key-value retrieval.", "source": "2307.03172.pdf"}
+{"question": "Which three quality aspects does RAGAS evaluate?", "reference": "Faithfulness, answer relevance and context relevance.", "source": "2309.15217.pdf"}
+{"question": "Does RAGAS need human-written reference answers?", "reference": "No. RAGAS is reference-free: it evaluates RAG pipelines without ground-truth human annotations.", "source": "2309.15217.pdf"}
+{"question": "What learning rate was used to train GPT-4?", "reference": "The documents do not contain this information, so the system should say it does not know.", "source": null}

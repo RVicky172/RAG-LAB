@@ -2,30 +2,22 @@
 .venv/
 __pycache__/
 *.py[cod]
-.pytest_cache/
-.ipynb_checkpoints/
 
 # Secrets: never commit
 .env
 .env.*
 !.env.example
 
-# Local data, indexes and model artifacts (can be large or private)
-rag-lab/data/*
-!rag-lab/data/README.md
-*.faiss
-*.npy
-chroma/
-qdrant_storage/
+# Data: keep only the knowledge-base PDFs
+data/*
+!data/raw/
 
-# Eval caches and traces
-rag-lab/eval/cache/
+# Eval outputs (regenerated on every run)
+eval/results/
 
 # OS / editor
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
-
-# Office lock files
 ~$*
