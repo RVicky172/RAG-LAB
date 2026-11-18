@@ -61,31 +61,62 @@ Real services are called over HTTP, not from a terminal. **FastAPI** turns your 
 
 **`app/api.py`**
 ```python
-"""HTTP API: the same three systems, behind one web service."""
+"""
+HTTP API: the three systems (RAG, agent, multi-agent) behind one web service.
+
+Why? Real apps (a website, a chat UI, another service) call your code over
+HTTP, not from a terminal. FastAPI turns plain Python functions into web
+endpoints and builds a test page at /docs for free.
+
+Run: uv run uvicorn app.api:api --port 8000   then open http://localhost:8000/docs
+"""
+
 from fastapi import FastAPI
 from pydantic import BaseModel
+
 from app import agent, multi_agent, rag
 
 api = FastAPI(title="Paper assistant")
 
+
 class Question(BaseModel):
+    """The JSON body every POST endpoint expects: `{"question": "..."}`.
+
+    FastAPI checks incoming requests against this class and returns a clear
+    error (HTTP 422) if `question` is missing or not a string.
+    """
+
     question: str
+
 
 @api.get("/health")
 def health():
+    """Liveness check: returns ok if the server is up. Used by Docker/AWS and by you."""
     return {"status": "ok"}
+
 
 @api.post("/rag")
 def ask_rag(q: Question):
+    """Answer with the RAG pipeline (Doc 1).
+
+    Returns:
+        `{"answer": ..., "sources": ["file p.N", ...]}`. Only the source labels
+        are returned, not the full chunk text, to keep the response small.
+    """
     out = rag.answer(q.question)
-    return {"answer": out["answer"], "sources": [f"{c['source']} p.{c['page']}" for c in out["contexts"]]}
+    sources = [f"{c['source']} p.{c['page']}" for c in out["contexts"]]
+    return {"answer": out["answer"], "sources": sources}
+
 
 @api.post("/agent")
 def ask_agent(q: Question):
+    """Answer with the single tool-using agent (Doc 2)."""
     return {"answer": agent.run(q.question)["answer"]}
+
 
 @api.post("/multi-agent")
 def ask_multi_agent(q: Question):
+    """Answer with the supervisor + specialists system (Doc 3)."""
     return {"answer": multi_agent.run(q.question)["answer"]}
 ```
 

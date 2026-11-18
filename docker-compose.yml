@@ -1,8 +1,22 @@
 # Local infrastructure. Start: docker compose up -d   Stop: docker compose down
 services:
   qdrant:
-    image: qdrant/qdrant:v1.16.3
+    image: qdrant/qdrant:v1.20.0   # keep in step with the qdrant-client version in pyproject.toml
     ports:
       - "6333:6333"          # REST API + web dashboard at http://localhost:6333/dashboard
     volumes:
       - ./data/qdrant:/qdrant/storage   # vectors survive restarts
+
+
+  phoenix:
+    image: arizephoenix/phoenix:version-21.2.0   # Arize Phoenix: see every LLM / tool call (traces)
+    ports:
+      - "127.0.0.1:6006:6006"   # web UI at http://localhost:6006, and where the app sends its traces.
+                                # 127.0.0.1 = only this computer can reach it (there is no login).
+    environment:
+      PHOENIX_WORKING_DIR: /mnt/data          # where it keeps its database
+      PHOENIX_ENABLE_AUTH: "false"            # no login: it's a local learning setup
+      PHOENIX_TELEMETRY_ENABLED: "false"      # send nothing to Arize: everything stays on this machine
+      PHOENIX_DISABLE_AGENT_ASSISTANT: "true" # we don't need its built-in AI assistant
+    volumes:
+      - ./data/phoenix:/mnt/data              # traces survive restarts

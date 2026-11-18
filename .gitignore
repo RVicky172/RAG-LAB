@@ -13,7 +13,7 @@ data/*
 !data/raw/
 
 # Eval outputs (regenerated on every run)
-eval/results/
+eval/*/results/
 
 # OS / editor
 .DS_Store

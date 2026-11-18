@@ -1,0 +1,120 @@
+/* Look of every eval report. html_page.py copies this file into each page. */
+
+/* --- Colours (light, then dark) ------------------------------------------- */
+:root {
+  --bg: #f7f7f8; --panel: #ffffff; --text: #1d1d1f; --muted: #6e6e73; --line: #e3e3e6;
+  --good: #1a7f37; --check: #9a6700; --bad: #cf222e;
+  --good-soft: #dafbe1; --check-soft: #fff8c5; --bad-soft: #ffebe9;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117; --panel: #161b22; --text: #e6edf3; --muted: #8d96a0; --line: #30363d;
+    --good: #3fb950; --check: #d29922; --bad: #f85149;
+    --good-soft: #12261e; --check-soft: #272115; --bad-soft: #25171c;
+  }
+}
+
+/* --- Page --------------------------------------------------------------------- */
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.55 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+main { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 26px; margin: 0; }
+h2 { font-size: 18px; margin: 40px 0 12px; }
+h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 20px 0 8px; }
+p { margin: 0 0 8px; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.num { font-variant-numeric: tabular-nums; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; }
+
+/* --- Score and status colours ------------------------------------------------- */
+.good { color: var(--good); }
+.check { color: var(--check); }
+.bad { color: var(--bad); }
+.pill { display: inline-block; min-width: 54px; text-align: center; padding: 1px 8px; border-radius: 999px;
+        font-size: 12px; font-weight: 600; }
+.pill.pass { background: var(--good-soft); color: var(--good); }
+.pill.check { background: var(--check-soft); color: var(--check); }
+.pill.fail { background: var(--bad-soft); color: var(--bad); }
+
+/* --- Summary at the top ----------------------------------------------------- */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 20px; }
+.stat .value { font-size: 30px; font-weight: 700; line-height: 1.2; }
+.stat .label { font-size: 13px; color: var(--muted); }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+tr:last-child td { border-bottom: none; }
+td.score { font-weight: 700; font-size: 17px; white-space: nowrap; }
+
+/* --- Token bar ------------------------------------------------------------------ */
+.bar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--line); margin: 8px 0; }
+.bar span { height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+/* --- Question list: one row per question, click to open ----------------------- */
+.qlist { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.qhead, .q > summary {
+  display: grid; align-items: center; gap: 10px;
+  grid-template-columns: 64px 36px 1fr repeat(4, 52px) 70px;
+  padding: 10px 16px;
+}
+.qhead { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--line); }
+.qhead span:nth-child(n+4), .q > summary span:nth-child(n+4) { text-align: right; }
+.q { border-bottom: 1px solid var(--line); }
+.q:last-child { border-bottom: none; }
+.q > summary { cursor: pointer; list-style: none; }
+.q > summary::-webkit-details-marker { display: none; }
+.q > summary:hover { background: var(--bg); }
+.q[open] > summary { background: var(--bg); border-bottom: 1px solid var(--line); }
+.q .score { font-weight: 600; font-variant-numeric: tabular-nums; }
+.qbody { padding: 4px 20px 20px; }
+
+/* Verdict box: where the problem probably is */
+.verdict { border-left: 4px solid; border-radius: 6px; padding: 10px 14px; margin-top: 16px; }
+.verdict.pass { border-color: var(--good); background: var(--good-soft); }
+.verdict.check { border-color: var(--check); background: var(--check-soft); }
+.verdict.fail { border-color: var(--bad); background: var(--bad-soft); }
+
+/* Expected vs actual answer */
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.compare > div { border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; background: var(--panel); }
+.compare .label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+.answer-text { white-space: pre-wrap; }
+
+/* Token parts table inside a question */
+.parts { max-width: 620px; }
+.parts td { padding: 4px 10px; border: none; }
+.parts td:nth-child(2), .parts td:nth-child(3) { text-align: right; font-variant-numeric: tabular-nums; }
+.parts tr.sum td { border-top: 1px solid var(--line); font-weight: 600; }
+
+/* Retrieved chunks: folded, click to read */
+.chunk { border: 1px solid var(--line); border-radius: 8px; margin: 6px 0; background: var(--panel); }
+.chunk > summary { cursor: pointer; padding: 6px 12px; font-size: 14px; }
+.chunk pre { margin: 0; padding: 8px 12px 12px; white-space: pre-wrap; font-size: 12.5px; max-height: 280px; overflow: auto;
+             border-top: 1px solid var(--line); }
+.tag { font-size: 12px; font-weight: 600; color: var(--good); margin-left: 6px; }
+
+/* Agent reports: tool names */
+code.tool { font-size: 12.5px; padding: 1px 6px; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); }
+
+/* Links (to Phoenix traces) */
+a { color: #4c8bf5; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* --- Phones: stack instead of side by side ------------------------------------ */
+@media (max-width: 720px) {
+  .qhead { display: none; }
+  .q > summary { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .q > summary span:nth-child(2) { display: none; }
+  .q > summary span:nth-child(3) { flex-basis: calc(100% - 80px); }
+  .q > summary span:nth-child(n+4) { font-size: 13px; }
+  .q > summary span[data-label]::before { content: attr(data-label) " "; color: var(--muted); font-weight: 400; }
+  .compare { grid-template-columns: 1fr; }
+  .scores th:nth-child(4), .scores td:nth-child(4) { display: none; }  /* "If low, look at": too narrow on a phone */
+}
