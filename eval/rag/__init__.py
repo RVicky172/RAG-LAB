@@ -1,5 +1,5 @@
 """
-Doc 1: evaluate the RAG pipeline.
+Doc 1: evaluate the RAG pipeline. The LangGraph agent eval (Doc 4) reuses this code.
 
     questions.jsonl  the test set: question, reference answer, expected paper
     evaluate.py      run the eval                          (python -m eval.rag.evaluate)

@@ -1,5 +1,6 @@
 """
 The HTML report for the RAG eval (Doc 1): eval/rag/results/report.html
+and for the LangGraph agent eval (Doc 4): eval/langgraph_agent/results/report.html
 
 Page layout, top to bottom:
     1. Summary   passed / check / failed, the mean of each score, token totals
@@ -48,7 +49,7 @@ def parts_of(tokens: dict) -> list[tuple[str, str, float]]:
     return [(name, color, tokens[key]) for key, (name, color) in PARTS.items()]
 
 
-def summary(results: list[dict], statuses: list[str]) -> str:
+def summary(results: list[dict], statuses: list[str], project: str) -> str:
     """Pass/check/fail counts, a table of mean scores, and the answer calls' tokens."""
     count = len(results)
 
@@ -92,7 +93,7 @@ def summary(results: list[dict], statuses: list[str]) -> str:
   {token_bar(parts_of(average_call))}
   {legend(parts_of(average_call))}
 </div>
-{phoenix_panel("rag-eval")}"""
+{phoenix_panel(project)}"""
 
 
 def token_table(tokens: dict) -> str:
@@ -138,6 +139,12 @@ def rag_row(num: int, row: dict) -> tuple[str, str]:
     cells += f'<span class="num muted" data-label="Tokens">{n(row["tokens"]["total"])}</span>'
 
     expected_paper = esc(row["source"]) if row["source"] else "none (the papers don't contain the answer)"
+
+    # The LangGraph agent (Doc 4) may search twice, with a rewritten query.
+    searches = row.get("searches", 1)
+    search_note = (f'<p class="muted small">Searched {searches} times; the last query was rewritten to: '
+                   f'<code>{esc(row["query"])}</code></p>' if searches > 1 else "")
+
     details = f"""
     {verdict(diag)}
     <h3>Answer</h3>
@@ -149,6 +156,7 @@ def rag_row(num: int, row: dict) -> tuple[str, str]:
     {token_table(row["tokens"])}
     <h3>Retrieved chunks</h3>
     <p class="muted small">Expected paper: {expected_paper}. Click a chunk to read it.</p>
+    {search_note}
     {chunk_list(row)}
     <h3>Trace</h3>
     <p>The answer call and the judge's calls, with tokens and timing:
@@ -156,19 +164,22 @@ def rag_row(num: int, row: dict) -> tuple[str, str]:
     return diag.status, question_row(num, row["question"], diag, cells, details)
 
 
-def write_rag_report(results: list[dict], path: Path, workers: int | str = "?") -> None:
-    """Write the HTML report for a RAG eval run.
+def write_rag_report(results: list[dict], path: Path, workers: int | str = "?",
+                     title: str = "RAG", project: str = "rag-eval") -> None:
+    """Write the HTML report for a RAG eval run (plain RAG, or the LangGraph agent).
 
     Args:
         results: The rows from `eval.rag.evaluate`, each with its 4 scores, a `tokens` dict and `trace_id`.
         path: Where to write the .html file.
         workers: How many questions ran in parallel (shown under the title).
+        title: Which system was tested, e.g. "RAG" or "LangGraph agent".
+        project: Its Phoenix project, e.g. "rag-eval".
     """
     rows = [rag_row(num, row) for num, row in enumerate(results, start=1)]
     statuses = [status for status, _ in rows]
     columns = [name for name, _, _ in METRICS.values()] + ["Tokens"]
 
-    body = (summary(results, statuses)
+    body = (summary(results, statuses, project)
             + question_list("Needs attention", "Open by default. The coloured box says where the problem "
                             "probably is: retrieval, the LLM, or the judge. It's a hint, not a verdict: "
                             "read the answer and the chunks to decide.",
@@ -176,5 +187,5 @@ def write_rag_report(results: list[dict], path: Path, workers: int | str = "?") 
             + question_list("Passed", "Click a question to see its details.",
                             columns, [html for status, html in rows if status == "pass"]))
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(page("RAG eval report", f"{len(results)} questions · {workers} in parallel", body),
+    path.write_text(page(f"{title} eval report", f"{len(results)} questions · {workers} in parallel", body),
                     encoding="utf-8")

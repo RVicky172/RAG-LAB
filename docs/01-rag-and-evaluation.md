@@ -66,7 +66,7 @@ cp .env.example .env           # skip if .env exists
 
 All app code lives in `app/`. Every setting comes from `.env`, so moving to AWS later means editing `.env`, not code.
 
-By the end of Doc 3, `app/` looks like this. Code used by more than one system lives in `shared/`; every system has its own folder:
+By the end of Doc 4, `app/` looks like this. Code used by more than one system lives in `shared/`; every system has its own folder:
 
 ```
 app/
@@ -81,9 +81,12 @@ app/
 │   └── query.py            per question: retrieve -> generate        python -m app.rag.query "..."
 ├── single_agent/           Doc 2
 │   └── agent.py            one agent with both tools                 python -m app.single_agent.agent "..."
-└── multi_agent/            Doc 3
-    ├── specialists.py      researcher + analyst, wrapped as tools
-    └── supervisor.py       the supervisor that delegates to them     python -m app.multi_agent.supervisor "..."
+├── multi_agent/            Doc 3
+│   ├── specialists.py      researcher + analyst, wrapped as tools
+│   └── supervisor.py       the supervisor that delegates to them     python -m app.multi_agent.supervisor "..."
+└── langgraph_agent/        Doc 4
+    ├── nodes.py            the state and the steps of the graph
+    └── graph.py            wires the steps into a LangGraph graph    python -m app.langgraph_agent.graph "..."
 ```
 
 Every folder also has an `__init__.py` (shown below with each folder). It makes the folder a Python package, and its docstring says what's inside.
@@ -91,12 +94,13 @@ Every folder also has an `__init__.py` (shown below with each folder). It makes 
 **`app/__init__.py`**
 ```python
 """
-The paper assistant: three ways to answer questions about the 4 AI papers in data/raw/.
+The paper assistant: four ways to answer questions about the 4 AI papers in data/raw/.
 
     shared/        used by every system: settings, the LLM, the tools, trace printing
     rag/           Doc 1: RAG (ingest the PDFs once, then query them)
     single_agent/  Doc 2: one agent that decides which tools to call
     multi_agent/   Doc 3: a supervisor that delegates to two specialist agents
+    langgraph_agent/  Doc 4: a self-correcting RAG agent, built step by step with LangGraph
 """
 ```
 
@@ -641,6 +645,7 @@ eval/
 │   └── results/            output: results.json + report.html (git-ignored)
 ├── single_agent/           Doc 2
 ├── multi_agent/            Doc 3
+├── langgraph_agent/        Doc 4 (reuses the RAG eval)
 └── rebuild_reports.py      rebuild every report from saved results   python -m eval.rebuild_reports
 ```
 
@@ -659,6 +664,7 @@ The evals: one folder per system, plus the code they share.
     rag/           Doc 1: evaluate the RAG pipeline       (python -m eval.rag.evaluate)
     single_agent/  Doc 2: evaluate the single agent       (python -m eval.single_agent.evaluate)
     multi_agent/   Doc 3: evaluate the multi-agent system (python -m eval.multi_agent.evaluate)
+    langgraph_agent/  Doc 4: evaluate the LangGraph agent  (python -m eval.langgraph_agent.evaluate)
     rebuild_reports.py  rebuild every HTML report from the saved results (python -m eval.rebuild_reports)
 
 Each eval folder holds its own questions and writes its own results/ folder:
@@ -1093,7 +1099,7 @@ The RAG eval folder:
 **`eval/rag/__init__.py`**
 ```python
 """
-Doc 1: evaluate the RAG pipeline.
+Doc 1: evaluate the RAG pipeline. The LangGraph agent eval (Doc 4) reuses this code.
 
     questions.jsonl  the test set: question, reference answer, expected paper
     evaluate.py      run the eval                          (python -m eval.rag.evaluate)
@@ -1257,6 +1263,7 @@ def diagnose_rag(row: dict) -> Diagnosis:
 ```python
 """
 The HTML report for the RAG eval (Doc 1): eval/rag/results/report.html
+and for the LangGraph agent eval (Doc 4): eval/langgraph_agent/results/report.html
 
 Page layout, top to bottom:
     1. Summary   passed / check / failed, the mean of each score, token totals
@@ -1305,7 +1312,7 @@ def parts_of(tokens: dict) -> list[tuple[str, str, float]]:
     return [(name, color, tokens[key]) for key, (name, color) in PARTS.items()]
 
 
-def summary(results: list[dict], statuses: list[str]) -> str:
+def summary(results: list[dict], statuses: list[str], project: str) -> str:
     """Pass/check/fail counts, a table of mean scores, and the answer calls' tokens."""
     count = len(results)
 
@@ -1349,7 +1356,7 @@ def summary(results: list[dict], statuses: list[str]) -> str:
   {token_bar(parts_of(average_call))}
   {legend(parts_of(average_call))}
 </div>
-{phoenix_panel("rag-eval")}"""
+{phoenix_panel(project)}"""
 
 
 def token_table(tokens: dict) -> str:
@@ -1395,6 +1402,12 @@ def rag_row(num: int, row: dict) -> tuple[str, str]:
     cells += f'<span class="num muted" data-label="Tokens">{n(row["tokens"]["total"])}</span>'
 
     expected_paper = esc(row["source"]) if row["source"] else "none (the papers don't contain the answer)"
+
+    # The LangGraph agent (Doc 4) may search twice, with a rewritten query.
+    searches = row.get("searches", 1)
+    search_note = (f'<p class="muted small">Searched {searches} times; the last query was rewritten to: '
+                   f'<code>{esc(row["query"])}</code></p>' if searches > 1 else "")
+
     details = f"""
     {verdict(diag)}
     <h3>Answer</h3>
@@ -1406,6 +1419,7 @@ def rag_row(num: int, row: dict) -> tuple[str, str]:
     {token_table(row["tokens"])}
     <h3>Retrieved chunks</h3>
     <p class="muted small">Expected paper: {expected_paper}. Click a chunk to read it.</p>
+    {search_note}
     {chunk_list(row)}
     <h3>Trace</h3>
     <p>The answer call and the judge's calls, with tokens and timing:
@@ -1413,19 +1427,22 @@ def rag_row(num: int, row: dict) -> tuple[str, str]:
     return diag.status, question_row(num, row["question"], diag, cells, details)
 
 
-def write_rag_report(results: list[dict], path: Path, workers: int | str = "?") -> None:
-    """Write the HTML report for a RAG eval run.
+def write_rag_report(results: list[dict], path: Path, workers: int | str = "?",
+                     title: str = "RAG", project: str = "rag-eval") -> None:
+    """Write the HTML report for a RAG eval run (plain RAG, or the LangGraph agent).
 
     Args:
         results: The rows from `eval.rag.evaluate`, each with its 4 scores, a `tokens` dict and `trace_id`.
         path: Where to write the .html file.
         workers: How many questions ran in parallel (shown under the title).
+        title: Which system was tested, e.g. "RAG" or "LangGraph agent".
+        project: Its Phoenix project, e.g. "rag-eval".
     """
     rows = [rag_row(num, row) for num, row in enumerate(results, start=1)]
     statuses = [status for status, _ in rows]
     columns = [name for name, _, _ in METRICS.values()] + ["Tokens"]
 
-    body = (summary(results, statuses)
+    body = (summary(results, statuses, project)
             + question_list("Needs attention", "Open by default. The coloured box says where the problem "
                             "probably is: retrieval, the LLM, or the judge. It's a hint, not a verdict: "
                             "read the answer and the chunks to decide.",
@@ -1433,7 +1450,7 @@ def write_rag_report(results: list[dict], path: Path, workers: int | str = "?") 
             + question_list("Passed", "Click a question to see its details.",
                             columns, [html for status, html in rows if status == "pass"]))
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(page("RAG eval report", f"{len(results)} questions · {workers} in parallel", body),
+    path.write_text(page(f"{title} eval report", f"{len(results)} questions · {workers} in parallel", body),
                     encoding="utf-8")
 ```
 
@@ -1467,6 +1484,8 @@ WORKERS questions running in parallel), the token use of each question, the
 averages, and eval/rag/results/ with results.json and report.html (open it in a browser).
 Every question is also one trace in Phoenix (project "rag-eval"): the answer call
 and all judge calls, with their tokens. The report links to each one.
+
+The LangGraph agent eval (Doc 4) reuses main() below with its own system and names.
 """
 
 import asyncio
@@ -1539,7 +1558,8 @@ def log(t0: float, message: str) -> None:
 running = 0
 
 
-async def evaluate_one(num: int, row: dict, metrics: dict, limit: asyncio.Semaphore, t0: float, tracer) -> dict:
+async def evaluate_one(num: int, row: dict, metrics: dict, limit: asyncio.Semaphore, t0: float,
+                       tracer, answer_fn) -> dict:
     """Answer one question, check retrieval, run the judges, and log START and DONE.
 
     Args:
@@ -1549,6 +1569,7 @@ async def evaluate_one(num: int, row: dict, metrics: dict, limit: asyncio.Semaph
         limit: Semaphore that lets at most WORKERS questions run at once.
         t0: Time the eval started, for the log timestamps.
         tracer: From start_tracing(); groups this question's calls into one Phoenix trace.
+        answer_fn: The system to test: plain RAG's answer(), or the LangGraph agent's.
 
     Returns:
         The same row with the answer, the contexts, the latency and all scores added.
@@ -1566,9 +1587,11 @@ async def evaluate_one(num: int, row: dict, metrics: dict, limit: asyncio.Semaph
             # 1. Run the RAG pipeline and time it. answer() is normal (sync) code,
             #    so run it in a thread to avoid blocking the other questions.
             start = time.perf_counter()
-            out = await asyncio.to_thread(answer, row["question"])
+            out = await asyncio.to_thread(answer_fn, row["question"])
             row["answer"] = out["answer"]
             row["contexts"] = out["contexts"]
+            row["searches"] = out.get("searches", 1)          # the LangGraph agent may search twice
+            row["query"] = out.get("query", row["question"])  # ...with a rewritten query
             row["latency_s"] = round(time.perf_counter() - start, 1)
             row["tokens"] = answer_tokens(row["question"], out)  # instructions / context / question / output
             span.set_attribute("output.value", row["answer"])
@@ -1591,10 +1614,19 @@ async def evaluate_one(num: int, row: dict, metrics: dict, limit: asyncio.Semaph
             return row
 
 
-async def main():
-    """Evaluate all questions, print the averages, and save the results and the report."""
+async def main(answer_fn=answer, results_dir=RESULTS_FILE.parent, title="RAG", project="rag-eval"):
+    """Evaluate all questions, print the averages, and save the results and the report.
+
+    The arguments let Doc 4 reuse this same eval for the LangGraph agent.
+
+    Args:
+        answer_fn: The system to test. Takes a question, returns `{"answer", "contexts", "usage"}`.
+        results_dir: Folder for results.json and report.html.
+        title: Name of the system, shown in the HTML report.
+        project: The Phoenix project the traces go to.
+    """
     sys.stdout.reconfigure(encoding="utf-8")  # Windows console: allow non-ASCII characters
-    tracer = start_tracing("rag-eval", judge=True)  # record the app and the judge in Phoenix
+    tracer = start_tracing(project, judge=True)  # record the system and the judge in Phoenix
 
     # One judge shared by the three metrics.
     llm = judge_llm()
@@ -1611,11 +1643,11 @@ async def main():
     t0 = time.perf_counter()
     limit = asyncio.Semaphore(WORKERS)
     results = await asyncio.gather(
-        *(evaluate_one(num, row, metrics, limit, t0, tracer) for num, row in enumerate(rows, start=1)))
+        *(evaluate_one(num, row, metrics, limit, t0, tracer, answer_fn) for num, row in enumerate(rows, start=1)))
     print(f"\ntotal time: {time.perf_counter() - t0:.0f}s with {WORKERS} workers")
 
     # The average of each score is the number that goes in the README results table.
-    keys = ["retrieval_hit", "context_recall", "faithfulness", "answer_accuracy", "latency_s"]
+    keys = ["retrieval_hit", "context_recall", "faithfulness", "answer_accuracy", "latency_s", "searches"]
     means = [f"{key}={sum(r[key] for r in results) / len(results):.2f}" for key in keys]
     print("\nMEAN  " + "  ".join(means))
 
@@ -1624,13 +1656,14 @@ async def main():
     def total(key):
         return sum(r["tokens"][key] for r in results)
     print(f"TOKENS  answer calls: {total('input'):,} in + {total('output'):,} out"
-          f"  |  judge + everything: see Phoenix, project rag-eval")
+          f"  |  judge + everything: see Phoenix, project {project}")
 
     # Save every row (answer, chunks, scores, tokens) so you can read the failing ones later,
     # and the same data as an HTML page for the browser.
-    save_results(results, RESULTS_FILE)
-    write_rag_report(results, REPORT_FILE, WORKERS)
-    print(f"\nreport: {REPORT_FILE.resolve()}")
+    results_dir = Path(results_dir)
+    save_results(results, results_dir / "results.json")
+    write_rag_report(results, results_dir / "report.html", WORKERS, title, project)
+    print(f"\nreport: {(results_dir / 'report.html').resolve()}")
 
 
 if __name__ == "__main__":
@@ -1650,12 +1683,17 @@ Run: uv run python -m eval.rebuild_reports
 
 import json
 
-from eval.rag.evaluate import REPORT_FILE, RESULTS_FILE, WORKERS
+from eval.rag.evaluate import REPORT_FILE, WORKERS
 from eval.rag.report import write_rag_report
 
-if RESULTS_FILE.exists():
-    write_rag_report(json.loads(RESULTS_FILE.read_text(encoding="utf-8")), REPORT_FILE, WORKERS)
-    print(f"report: {REPORT_FILE.resolve()}")
+# The RAG-style evals (Doc 1 + 4): results folder -> title shown in the report, Phoenix project.
+for folder, title, project in [("rag", "RAG", "rag-eval"),
+                               ("langgraph_agent", "LangGraph agent", "langgraph-eval")]:
+    results_file = REPORT_FILE.parents[2] / folder / "results" / "results.json"   # eval/<folder>/results/
+    if results_file.exists():
+        report_file = results_file.with_name("report.html")
+        write_rag_report(json.loads(results_file.read_text(encoding="utf-8")), report_file, WORKERS, title, project)
+        print(f"report: {report_file.resolve()}")
 
 # The agent evals (Doc 2 + 3): results folder -> title shown in the report, Phoenix project.
 for folder, title, project in [("single_agent", "Single agent", "single-agent-eval"),

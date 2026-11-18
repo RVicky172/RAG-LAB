@@ -7,12 +7,17 @@ Run: uv run python -m eval.rebuild_reports
 
 import json
 
-from eval.rag.evaluate import REPORT_FILE, RESULTS_FILE, WORKERS
+from eval.rag.evaluate import REPORT_FILE, WORKERS
 from eval.rag.report import write_rag_report
 
-if RESULTS_FILE.exists():
-    write_rag_report(json.loads(RESULTS_FILE.read_text(encoding="utf-8")), REPORT_FILE, WORKERS)
-    print(f"report: {REPORT_FILE.resolve()}")
+# The RAG-style evals (Doc 1 + 4): results folder -> title shown in the report, Phoenix project.
+for folder, title, project in [("rag", "RAG", "rag-eval"),
+                               ("langgraph_agent", "LangGraph agent", "langgraph-eval")]:
+    results_file = REPORT_FILE.parents[2] / folder / "results" / "results.json"   # eval/<folder>/results/
+    if results_file.exists():
+        report_file = results_file.with_name("report.html")
+        write_rag_report(json.loads(results_file.read_text(encoding="utf-8")), report_file, WORKERS, title, project)
+        print(f"report: {report_file.resolve()}")
 
 # The agent evals (Doc 2 + 3): results folder -> title shown in the report, Phoenix project.
 for folder, title, project in [("single_agent", "Single agent", "single-agent-eval"),

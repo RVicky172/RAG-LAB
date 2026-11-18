@@ -1,4 +1,4 @@
-# Doc 4: Deploy on AWS
+# Doc 5: Deploy on AWS
 
 **Time:** ~2 hours  **You build:** the same three systems (RAG, agent, multi-agent) running on AWS behind an HTTP API, with the LLM served by Amazon Bedrock and the same evals run there.
 
@@ -7,7 +7,7 @@
 ## 1. What changes and what doesn't
 
 ```
-LOCAL (Docs 1-3)                         AWS (this doc)
+LOCAL (Docs 1-4)                         AWS (this doc)
 ──────────────────                       ──────────────────────────────────────────
 your Python  ──► Qdrant (Docker)         EC2 instance (one small server)
      │                                    ┌──────────── docker compose ────────────┐

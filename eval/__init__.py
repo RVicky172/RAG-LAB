@@ -5,6 +5,7 @@ The evals: one folder per system, plus the code they share.
     rag/           Doc 1: evaluate the RAG pipeline       (python -m eval.rag.evaluate)
     single_agent/  Doc 2: evaluate the single agent       (python -m eval.single_agent.evaluate)
     multi_agent/   Doc 3: evaluate the multi-agent system (python -m eval.multi_agent.evaluate)
+    langgraph_agent/  Doc 4: evaluate the LangGraph agent  (python -m eval.langgraph_agent.evaluate)
     rebuild_reports.py  rebuild every HTML report from the saved results (python -m eval.rebuild_reports)
 
 Each eval folder holds its own questions and writes its own results/ folder:
